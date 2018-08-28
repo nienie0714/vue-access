@@ -1,10 +1,10 @@
 # nxy-vue-access
 
-> A Vue.js project
+> 基于 Vue、ElementUI 的前台权限控制系统模板
 
 ## Build Setup
 
-``` bash
+```bash
 # install dependencies
 npm install
 
