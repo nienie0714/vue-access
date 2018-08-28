@@ -15,6 +15,9 @@
 </template>
 
 <script>
+  import { mapActions } from 'vuex';
+  import ElementUI from 'element-ui';
+
   export default {
     data: function() {
       return {
@@ -32,11 +35,43 @@
         }
       }
     },
+    created() {
+      // this.getUser();
+    },
     methods: {
+      ...mapActions(['ajax']),
+      getUser() {
+        let req = this.ajax({
+          name: 'getUser',
+          method: 'get'
+        });
+        req.then(res => {
+          console.log('user success', res);
+        })
+          .catch(err => {
+            ElementUI.Message('a');
+            console.log('user catch', err);
+          });
+      },
+      postLoginForm(ruleForm) {
+        let req = this.ajax({
+          name: 'postLoginForm',
+          data: this.ruleForm
+        });
+        console.log(1111, req);
+        req.then(res => {
+          console.log('postLoginForm success', res);
+        })
+          .catch(err => {
+            ElementUI.Message('失败');
+            console.log('postLoginForm catch', err);
+          });
+      },
       submitForm(formName) {
         this.$refs[formName].validate((valid) => {
           if(valid) {
             localStorage.setItem('v_username', this.ruleForm.username);
+            this.postLoginForm(formName);
             this.$router.push('/');
           } else {
             console.log('error submit!!');
@@ -48,7 +83,7 @@
   }
 </script>
 
-<style scoped>
+<style scoped lang="less">
   .login-wrap {
     position: relative;
     width: 100%;
