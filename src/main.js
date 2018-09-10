@@ -1,31 +1,58 @@
-// The Vue build version to load with the `import` command
-// (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue';
-import App from './App';
+import MintUI from 'mint-ui';
+import FastClick from 'fastclick';
+import VueI18n from 'vue-i18n';
 import router from './router';
 import store from './store';
-import ElementUI from 'element-ui';
-import 'element-ui/lib/theme-chalk/index.css';
-import { setLoc, getLoc } from './utils';
+import components from './components';
+import locales from './locales';
+import filters from './filters';
+import directs from './directive';
+import App from './App';
+import { spread } from './utils';
 
-Vue.config.productionTip = false;
-Vue.use(ElementUI);
+if (window.htp.mock) {
+  require('./mock');
+}
 
-router.beforeEach((to, from, next) => {
-  const role = getLoc('v_username');
-  if (!role && to.path !== '/login') {
-    next('/login');
-  } else if (to.meta.permission) {
-    // 如果是管理员权限则可进入，这里只是简单的模拟管理员权限而已
-    role === 'admin' ? next() : next('/403');
-  } else {
-    next();
-  }
+Vue.use(MintUI);
+Vue.use(VueI18n);
+
+Vue.prototype.toast = MintUI.Toast;
+Vue.prototype.spread = spread;
+
+if ('addEventListener' in document) {
+  document.addEventListener(
+    'fastclick',
+    () => {
+      FastClick.attach(document.body);
+    },
+    false
+  );
+}
+
+const messages = Object.create(null);
+Object.keys(locales).forEach(i => {
+  messages[i] = {
+    ...locales[i]
+  };
 });
+const i18n = new VueI18n({
+  locale: store.state.lang,
+  messages
+});
+
+Object.keys(components).forEach(key => {
+  var name = key.replace(/(\w)/, v => v.toUpperCase());
+  Vue.component(`v${name}`, components[key]);
+});
+
 new Vue({
-  el: '#app',
-  router,
+  data: {
+    eventHub: new Vue() //事件中心
+  },
+  i18n,
   store,
-  components: { App },
-  template: '<App/>'
-});
+  router,
+  render: h => h(App)
+}).$mount('#app');

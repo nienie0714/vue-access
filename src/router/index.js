@@ -1,18 +1,23 @@
 import Vue from 'vue';
-import Router from 'vue-router';
+import VueRouter from 'vue-router';
+import routes from './routes';
 
-Vue.use(Router);
+Vue.use(VueRouter);
 
-export default new Router({
-  routes: [
-    {
-      path: '/',
-      name: 'Home',
-      component: resolve => require(['../components/Home.vue'], resolve)
-    },
-    {
-      path: '/login',
-      component: resolve => require(['../pages/Login.vue'], resolve)
-    }
-  ]
+const router = new VueRouter({
+  mode: 'hash',
+  linkActiveClass: 'is-active',
+  routes
 });
+
+router.beforeEach((to, from, next) => {
+  //解决messagebox在切换路由时不取消的bug
+  if (document.querySelector('.mint-msgbox-cancel')) {
+    document.querySelector('.mint-msgbox-cancel').click();
+  }
+  return next();
+});
+
+router.afterEach(() => {});
+
+export default router;

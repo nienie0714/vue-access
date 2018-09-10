@@ -1,5 +1,37 @@
 import store from '../store';
 
+//get params from url
+export function getParams(url) {
+  url = url || window.location.href;
+  if (url.indexOf('#') != -1) {
+    url = url.split('#')[1];
+  }
+
+  let params = '';
+
+  if (url.indexOf('?') != -1) {
+    params = url.substr(url.indexOf('?') + 1);
+  }
+
+  let obj = {};
+
+  if (params) {
+    let arr = [];
+
+    if (params.indexOf('&') == -1) {
+      arr = [params];
+    } else {
+      arr = params.split('&');
+    }
+    for (let i = 0; i < arr.length; i++) {
+      let s = arr[i].split('=');
+
+      obj[s[0]] = decodeURIComponent(s[1]);
+    }
+  }
+  return obj;
+}
+
 //set session
 export function setSen(k, val) {
   if (typeof val == 'string') {
@@ -12,14 +44,14 @@ export function setSen(k, val) {
 
 //get session
 export function getSen(k) {
-  let val = sessionStorage.getItem(k);
+  let uu = sessionStorage.getItem(k);
 
   try {
-    if (typeof JSON.parse(val) != 'number') {
-      val = JSON.parse(val);
+    if (typeof JSON.parse(uu) != 'number') {
+      uu = JSON.parse(uu);
     }
   } catch (e) {}
-  return val;
+  return uu;
 }
 
 //set local
@@ -34,31 +66,22 @@ export function setLoc(k, val) {
 
 //get local
 export function getLoc(k) {
-  let val = localStorage.getItem(k);
+  let uu = localStorage.getItem(k);
 
   try {
-    if (typeof JSON.parse(val) != 'number') {
-      val = JSON.parse(val);
+    if (typeof JSON.parse(uu) != 'number') {
+      uu = JSON.parse(uu);
     }
   } catch (e) {}
-  return val;
+  return uu;
 }
 
 //clear session
-export function clearSessionKey(k) {
+export function clearKey(k) {
   if (k) {
     sessionStorage.removeItem(k);
   } else {
     sessionStorage.clear();
-  }
-}
-
-//clear local
-export function clearLocalKey(k) {
-  if (k) {
-    localStorage.removeItem(k);
-  } else {
-    localStorage.clear();
   }
 }
 
@@ -73,6 +96,18 @@ export function getClient() {
   };
 }
 
+//格式化距离
+export function formatDistance(distance) {
+  if (distance < 0.1) {
+    return '<100m';
+  } else if (distance >= 0.1 && distance < 1) {
+    return distance * 1000 + 'm';
+  } else if (distance >= 1) {
+    return distance.toFixed(1) + 'km';
+  }
+}
+
+//序列化对象和数组
 export function serialize(data) {
   if (data != null && data != '') {
     try {
@@ -86,6 +121,137 @@ export function serialize(data) {
   }
   return data;
 }
+
+//计算金额加减时防止金额失去精度
+export function calculatePrice(price = 0) {
+  if (typeof price === 'string') {
+    price = parseFloat(price);
+  }
+
+  if (isNaN(price)) {
+    return 0;
+  }
+
+  return Math.round(price * 100) / 100;
+}
+
+//格式化金额
+export function formatPrice(price = 0) {
+  if (typeof price === 'string') {
+    price = parseFloat(price);
+  }
+
+  if (isNaN(price)) {
+    return 0;
+  }
+
+  if (parseInt(price) === price) {
+    return price;
+  }
+
+  return price.toFixed(2);
+}
+
+//判断当前运行的浏览器环境
+export function browser() {
+  let os = {};
+  let ua = window.navigator.userAgent.toLowerCase();
+
+  os.isAndroid = /android/.test(ua); //browser,wechat,android
+  os.isIOS = /iphone|ipad|ipod/.test(ua); //browser,wechat,ios
+  os.isBrowser = /macintel|win32/.test(navigator.platform.toLowerCase()); //browser
+  os.isWeixin = ua.indexOf('micromessenger') != -1; //wechat
+  os.isAlipay = ua.indexOf('alipayclient') != -1; //ali
+  os.isApp = function() {
+    return (this.isAndroid || this.isIOS) && !this.isWeixin && !this.isBrowser && !this.isAlipay;
+  };
+
+  return os;
+}
+
+//格式化日期
+Date.prototype.format = function(fmt) {
+  let o = {
+    'M+': this.getMonth() + 1, //月份
+    'd+': this.getDate(), //日
+    'h+': this.getHours(), //小时
+    'm+': this.getMinutes(), //分
+    's+': this.getSeconds(), //秒
+    'q+': Math.floor((this.getMonth() + 3) / 3), //季度
+    S: this.getMilliseconds() //毫秒
+  };
+
+  if (/(y+)/.test(fmt)) {
+    fmt = fmt.replace(RegExp.$1, String(this.getFullYear()).substr(4 - RegExp.$1.length));
+  }
+  for (let k in o) {
+    if (new RegExp('(' + k + ')').test(fmt)) {
+      fmt = fmt.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ('00' + o[k]).substr(String(o[k]).length));
+    }
+  }
+  return fmt;
+};
+
+//格式化日期
+export function formatDate(nS, format) {
+  //日期格式化
+  if (!nS) {
+    return '';
+  }
+  format = format || 'yyyy-MM-dd hh:mm:ss';
+  return new Date(nS).format(format);
+}
+
+//验证手机号码
+export function checkPhone(phone) {
+  return Boolean(/^1[3578]\d{9}$/.test(phone));
+}
+
+//验证密码
+export function checkPassword(pwd) {
+  return Boolean(/^[a-z0-9_-]{6,16}$/.test(pwd));
+}
+
+//验证验证吗
+export function checkVerify(code) {
+  return Boolean(/^\d{4}$/.test(code));
+}
+
+//去除字符串左右两边的空格
+export function trim(str) {
+  return str.replace(/(^\s*)|(\s*$)/g, '');
+}
+
+//类似于findIndex
+Array.prototype.indexOfArr = function(obj) {
+  let res = -1;
+
+  this.filter(function(e, i) {
+    let keys = '';
+
+    for (let key in obj) {
+      keys = key;
+    }
+    if (obj[keys] == e[keys]) {
+      res = i;
+    }
+  });
+  return res;
+};
+
+//重写findIndex(某些手机不支持findIndex)
+Array.prototype.findIndex = function(func) {
+  let result = -1;
+
+  this.forEach((item, index) => {
+    var flag = func(item);
+
+    if (flag) {
+      result = index;
+    }
+  });
+  return result;
+};
 
 Array.prototype.max = function(prop) {
   let result;
@@ -135,64 +301,15 @@ Array.prototype.min = function(prop) {
   return result;
 };
 
-//重写findIndex(某些手机不支持findIndex)
-Array.prototype.findIndex = function(func) {
-  let result = -1;
-
-  this.forEach((item, index) => {
-    var flag = func(item);
-
-    if (flag) {
-      result = index;
-    }
-  });
-  return result;
-};
-
-//验证字符串是不是正整数
-export function validateNum(str) {
-  var reg = new RegExp(/^[1-9]*[1-9][0-9]*$/);
-  if (!reg.test(str)) {
-    return false;
-  }
-  return true;
-}
-
-//验证字符串是不是整数
-export function validateInteger(str) {
-  var reg = new RegExp(/^-?\\d+$/);
-  if (!reg.test(str)) {
-    return false;
-  }
-  return true;
-}
-
-//判断当前运行的浏览器环境
-export function browser() {
-  let os = {};
-  let ua = window.navigator.userAgent.toLowerCase();
-
-  os.isAndroid = /android/.test(ua); //browser,wechat,android
-  os.isIOS = /iphone|ipad|ipod/.test(ua); //browser,wechat,ios
-  os.isBrowser = /macintel|win32/.test(navigator.platform.toLowerCase()); //browser
-  os.isWeixin = ua.indexOf('micromessenger') != -1; //wechat
-  os.isAlipay = ua.indexOf('alipayclient') != -1; //ali
-  os.isApp = function() {
-    return (this.isAndroid || this.isIOS) && !this.isWeixin && !this.isBrowser && !this.isAlipay;
+//拆分数组参数
+export function spread(cb) {
+  return res => {
+    // cb(...res);
+    cb.apply(null, res);
   };
-
-  return os;
 }
 
-export function dataURLtoFile(dataurl, filename) {
-  //将base64转换为文件
-  var arr = dataurl.split(','),
-    mime = arr[0].match(/:(.*?);/)[1],
-    bstr = atob(arr[1]),
-    n = bstr.length,
-    u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new File([u8arr], filename, { type: mime });
+//后台默认数据格式
+export function jsonCallback(data) {
+  return { data, errorCode: [], status: 10000000 };
 }
